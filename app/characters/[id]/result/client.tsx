@@ -14,7 +14,7 @@ import { ShareModal } from "@/components/share-modal"
 import Link from "next/link"
 
 interface DetailedResultClientProps {
-  typeNumber: number
+  id: string
 }
 
 const typeColors = {
@@ -29,7 +29,7 @@ const typeColors = {
   9: { main: "#3C3C3C", sub: "#CFCFCF" },
 }
 
-export default function DetailedResultClient({ typeNumber }: DetailedResultClientProps) {
+export default function CharacterResultClient({ id }: DetailedResultClientProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [showCharacterTransition, setShowCharacterTransition] = useState(false)
@@ -37,13 +37,17 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
   const [compatibilityModalOpen, setCompatibilityModalOpen] = useState(false)
   const router = useRouter()
 
-  const type = typeData[typeNumber]
-  const colors = typeColors[typeNumber as keyof typeof typeColors]
-  const detailedCharacter = detailedCharacterData[typeNumber]
+  const currentType = typeData[Number.parseInt(id)]
+  const colors = typeColors[Number.parseInt(id) as keyof typeof typeColors]
+  const detailedCharacter = detailedCharacterData[Number.parseInt(id)]
+  const bestMatchType = currentType ? typeData[currentType.bestMatch] : null
+  const goodMatchTypes = currentType?.goodMatch?.map((id) => typeData[id]) || []
+  const badMatchTypes = currentType?.badMatch?.map((id) => typeData[id]) || []
+  const worstMatchType = currentType ? typeData[currentType.worstMatch] : null
 
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [typeNumber])
+  }, [id])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,21 +71,10 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
     }
   }, [targetCharacter, router])
 
-  const shareText = `私のKACHIKANタイプは「${type.name}」でした！\n${type.catchphrase}`
-  const characterImage = type.image || "/placeholder.svg"
+  const shareText = `私のKACHIKANタイプは「${currentType?.name}」でした！\n${currentType?.catchphrase}`
+  const characterImage = currentType?.image || "/placeholder.svg"
 
-  const bestCompatibilityPairs = [
-    { type1: 1, type2: 9, description: "努力と誠実が信頼で結ばれる" },
-    { type1: 2, type2: 5, description: "冷静と安定がチームバランスを生む" },
-    { type1: 3, type2: 6, description: "理想と自由が未来を創る" },
-    { type1: 4, type2: 2, description: "職人と実行者が堅実に成果を出す" },
-    { type1: 5, type2: 2, description: "秩序と実行が調和を作る" },
-    { type1: 7, type2: 4, description: "分析と職人が精密な結果を導く" },
-    { type1: 8, type2: 6, description: "表現と創造が場所を動かす" },
-    { type1: 9, type2: 1, description: "誠実さが挑戦を支える" },
-  ]
-
-  if (!type) {
+  if (!currentType) {
     return null
   }
 
@@ -127,7 +120,7 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
               filter: "blur(1px)",
             }}
           >
-            {typeNumber}
+            {id}
           </span>
         </div>
 
@@ -156,9 +149,9 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
               <div className="text-center space-y-2 px-4">
                 <p className="text-sm font-medium text-white/90">あなたのタイプは</p>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-balance leading-tight">
-                  {type.name}
+                  {currentType.name}
                 </h1>
-                <p className="text-sm text-white/90 font-medium">TYPE {typeNumber}</p>
+                <p className="text-sm text-white/90 font-medium">TYPE {id}</p>
               </div>
 
               <div
@@ -170,8 +163,8 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
               >
                 <div className="w-full aspect-square relative max-w-md mx-auto">
                   <img
-                    src={type.image || "/placeholder.svg"}
-                    alt={type.name}
+                    src={currentType.image || "/placeholder.svg"}
+                    alt={currentType.name}
                     className="w-full h-full object-cover rounded-3xl"
                   />
                   <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent rounded-b-3xl">
@@ -181,7 +174,7 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                         textShadow: "0 2px 12px rgba(0,0,0,0.9), 0 0 24px rgba(0,0,0,0.7)",
                       }}
                     >
-                      {type.catchphrase}
+                      {currentType.catchphrase}
                     </p>
                   </div>
                 </div>
@@ -199,20 +192,20 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                 <div className="space-y-3">
                   <h3 className="font-bold text-lg sm:text-xl">タイプ概要</h3>
                   <p className="text-sm sm:text-base text-muted-foreground leading-relaxed break-words">
-                    {type.description}
+                    {currentType.description}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <h3 className="font-bold text-lg sm:text-xl">キーワード</h3>
                   <div className="flex flex-wrap gap-2">
-                    {type.keywords.map((keyword, index) => (
+                    {currentType.keywords.map((keyword, index) => (
                       <span
                         key={index}
                         className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium"
                         style={{
-                          backgroundColor: type.color,
-                          color: type.textColor,
+                          backgroundColor: currentType.color,
+                          color: currentType.textColor,
                         }}
                       >
                         {keyword}
@@ -223,8 +216,10 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
 
                 <div className="space-y-3">
                   <h3 className="font-bold text-lg sm:text-xl">あなたのセリフ</h3>
-                  <div className="p-3 sm:p-4 rounded-xl relative" style={{ backgroundColor: `${type.color}20` }}>
-                    <p className="font-medium break-words leading-relaxed text-base sm:text-lg">「{type.quote}」</p>
+                  <div className="p-3 sm:p-4 rounded-xl relative" style={{ backgroundColor: `${currentType.color}20` }}>
+                    <p className="font-medium break-words leading-relaxed text-base sm:text-lg">
+                      「{currentType.quote}」
+                    </p>
                   </div>
                 </div>
               </Card>
@@ -316,81 +311,86 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   {/* Best Match */}
-                  <div onClick={() => handleCharacterClick(type.bestMatch)} className="block group cursor-pointer">
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-white/30 hover:border-white/60 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
-                      <div className="aspect-square relative overflow-hidden">
-                        <img
-                          src={typeData[type.bestMatch].image || "/placeholder.svg"}
-                          alt={typeData[type.bestMatch].name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
+                  {bestMatchType && (
+                    <div
+                      onClick={() => handleCharacterClick(currentType.bestMatch)}
+                      className="block group cursor-pointer"
+                    >
+                      <div className="relative overflow-hidden rounded-2xl border-2 border-white/30 hover:border-white/60 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
+                        <div className="aspect-square relative overflow-hidden">
+                          <img
+                            src={bestMatchType.image || "/placeholder.svg"}
+                            alt={bestMatchType.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
 
-                        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
+                          <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
+
+                          <div
+                            className="absolute z-20 font-black leading-none pointer-events-none select-none"
+                            style={{
+                              fontSize: "clamp(12rem, 35vw, 18rem)",
+                              left: "-10%",
+                              bottom: "-5%",
+                              transform: "rotate(15deg)",
+                              color: bestMatchType.subColor,
+                              opacity: 0.4,
+                              textShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 60px rgba(255,255,255,0.2)",
+                            }}
+                          >
+                            {currentType.bestMatch}
+                          </div>
+
+                          <div className="absolute top-3 right-3 z-30">
+                            <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                              最高の相性
+                            </div>
+                          </div>
+
+                          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1 z-30">
+                            <p className="text-xl font-bold text-white leading-tight drop-shadow-lg">
+                              {bestMatchType.name}
+                            </p>
+                            <p className="text-sm text-white/95 line-clamp-2 leading-relaxed drop-shadow-md">
+                              {bestMatchType.catchphrase}
+                            </p>
+                          </div>
+                        </div>
 
                         <div
-                          className="absolute z-20 font-black leading-none pointer-events-none select-none"
+                          className="p-4 backdrop-blur-sm"
                           style={{
-                            fontSize: "clamp(12rem, 35vw, 18rem)",
-                            left: "-10%",
-                            bottom: "-5%",
-                            transform: "rotate(15deg)",
-                            color: typeData[type.bestMatch].subColor,
-                            opacity: 0.4,
-                            textShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 60px rgba(255,255,255,0.2)",
+                            backgroundColor: bestMatchType.color,
                           }}
                         >
-                          {type.bestMatch}
-                        </div>
-
-                        <div className="absolute top-3 right-3 z-30">
-                          <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                            最高の相性
-                          </div>
-                        </div>
-
-                        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1 z-30">
-                          <p className="text-xl font-bold text-white leading-tight drop-shadow-lg">
-                            {typeData[type.bestMatch].name}
-                          </p>
-                          <p className="text-sm text-white/95 line-clamp-2 leading-relaxed drop-shadow-md">
-                            {typeData[type.bestMatch].catchphrase}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div
-                        className="p-4 backdrop-blur-sm"
-                        style={{
-                          backgroundColor: typeData[type.bestMatch].color,
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">❤️</span>
-                            <span className="text-sm font-semibold text-white">相性抜群</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-white transition-opacity hover:opacity-80">
-                            <span className="text-xs font-medium">詳細</span>
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">❤️</span>
+                              <span className="text-sm font-semibold text-white">相性抜群</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-white transition-opacity hover:opacity-80">
+                              <span className="text-xs font-medium">詳細</span>
+                              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Good Match */}
-                  {type.goodMatch &&
-                    type.goodMatch.map((goodType) => (
+                  {goodMatchTypes.length > 0 &&
+                    goodMatchTypes.map((goodType) => (
                       <div
-                        key={goodType}
-                        onClick={() => handleCharacterClick(goodType)}
+                        key={goodType.id}
+                        onClick={() => handleCharacterClick(goodType.id)}
                         className="block group cursor-pointer"
                       >
                         <div className="relative overflow-hidden rounded-2xl border-2 border-white/30 hover:border-white/60 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
                           <div className="aspect-square relative overflow-hidden">
                             <img
-                              src={typeData[goodType].image || "/placeholder.svg"}
-                              alt={typeData[goodType].name}
+                              src={goodType.image || "/placeholder.svg"}
+                              alt={goodType.name}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
 
@@ -403,12 +403,12 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                                 left: "-10%",
                                 bottom: "-5%",
                                 transform: "rotate(15deg)",
-                                color: typeData[goodType].subColor,
+                                color: goodType.subColor,
                                 opacity: 0.4,
                                 textShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 60px rgba(255,255,255,0.2)",
                               }}
                             >
-                              {goodType}
+                              {goodType.id}
                             </div>
 
                             <div className="absolute top-3 right-3 z-30">
@@ -419,10 +419,10 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
 
                             <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1 z-30">
                               <p className="text-xl font-bold text-white leading-tight drop-shadow-lg">
-                                {typeData[goodType].name}
+                                {goodType.name}
                               </p>
                               <p className="text-sm text-white/95 line-clamp-2 leading-relaxed drop-shadow-md">
-                                {typeData[goodType].catchphrase}
+                                {goodType.catchphrase}
                               </p>
                             </div>
                           </div>
@@ -430,7 +430,7 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                           <div
                             className="p-4 backdrop-blur-sm"
                             style={{
-                              backgroundColor: typeData[goodType].color,
+                              backgroundColor: goodType.color,
                             }}
                           >
                             <div className="flex items-center justify-between">
@@ -449,18 +449,18 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                     ))}
 
                   {/* Bad Match */}
-                  {type.badMatch &&
-                    type.badMatch.map((badType) => (
+                  {badMatchTypes.length > 0 &&
+                    badMatchTypes.map((badType) => (
                       <div
-                        key={badType}
-                        onClick={() => handleCharacterClick(badType)}
+                        key={badType.id}
+                        onClick={() => handleCharacterClick(badType.id)}
                         className="block group cursor-pointer"
                       >
                         <div className="relative overflow-hidden rounded-2xl border-2 border-white/30 hover:border-white/60 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
                           <div className="aspect-square relative overflow-hidden">
                             <img
-                              src={typeData[badType].image || "/placeholder.svg"}
-                              alt={typeData[badType].name}
+                              src={badType.image || "/placeholder.svg"}
+                              alt={badType.name}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
 
@@ -473,12 +473,12 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                                 left: "-10%",
                                 bottom: "-5%",
                                 transform: "rotate(15deg)",
-                                color: typeData[badType].subColor,
+                                color: badType.subColor,
                                 opacity: 0.4,
                                 textShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 60px rgba(255,255,255,0.2)",
                               }}
                             >
-                              {badType}
+                              {badType.id}
                             </div>
 
                             <div className="absolute top-3 right-3 z-30">
@@ -489,10 +489,10 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
 
                             <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1 z-30">
                               <p className="text-xl font-bold text-white leading-tight drop-shadow-lg">
-                                {typeData[badType].name}
+                                {badType.name}
                               </p>
                               <p className="text-sm text-white/95 line-clamp-2 leading-relaxed drop-shadow-md">
-                                {typeData[badType].catchphrase}
+                                {badType.catchphrase}
                               </p>
                             </div>
                           </div>
@@ -500,7 +500,7 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                           <div
                             className="p-4 backdrop-blur-sm"
                             style={{
-                              backgroundColor: typeData[badType].color,
+                              backgroundColor: badType.color,
                             }}
                           >
                             <div className="flex items-center justify-between">
@@ -519,67 +519,72 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                     ))}
 
                   {/* Worst Match */}
-                  <div onClick={() => handleCharacterClick(type.worstMatch)} className="block group cursor-pointer">
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-white/30 hover:border-white/60 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
-                      <div className="aspect-square relative overflow-hidden">
-                        <img
-                          src={typeData[type.worstMatch].image || "/placeholder.svg"}
-                          alt={typeData[type.worstMatch].name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
+                  {worstMatchType && (
+                    <div
+                      onClick={() => handleCharacterClick(currentType.worstMatch)}
+                      className="block group cursor-pointer"
+                    >
+                      <div className="relative overflow-hidden rounded-2xl border-2 border-white/30 hover:border-white/60 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
+                        <div className="aspect-square relative overflow-hidden">
+                          <img
+                            src={worstMatchType.image || "/placeholder.svg"}
+                            alt={worstMatchType.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
 
-                        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
+                          <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
+
+                          <div
+                            className="absolute z-20 font-black leading-none pointer-events-none select-none"
+                            style={{
+                              fontSize: "clamp(12rem, 35vw, 18rem)",
+                              left: "-10%",
+                              bottom: "-5%",
+                              transform: "rotate(15deg)",
+                              color: worstMatchType.subColor,
+                              opacity: 0.4,
+                              textShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 60px rgba(255,255,255,0.2)",
+                            }}
+                          >
+                            {currentType.worstMatch}
+                          </div>
+
+                          <div className="absolute top-3 right-3 z-30">
+                            <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                              要注意
+                            </div>
+                          </div>
+
+                          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1 z-30">
+                            <p className="text-xl font-bold text-white leading-tight drop-shadow-lg">
+                              {worstMatchType.name}
+                            </p>
+                            <p className="text-sm text-white/95 line-clamp-2 leading-relaxed drop-shadow-md">
+                              {worstMatchType.catchphrase}
+                            </p>
+                          </div>
+                        </div>
 
                         <div
-                          className="absolute z-20 font-black leading-none pointer-events-none select-none"
+                          className="p-4 backdrop-blur-sm"
                           style={{
-                            fontSize: "clamp(12rem, 35vw, 18rem)",
-                            left: "-10%",
-                            bottom: "-5%",
-                            transform: "rotate(15deg)",
-                            color: typeData[type.worstMatch].subColor,
-                            opacity: 0.4,
-                            textShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 60px rgba(255,255,255,0.2)",
+                            backgroundColor: worstMatchType.color,
                           }}
                         >
-                          {type.worstMatch}
-                        </div>
-
-                        <div className="absolute top-3 right-3 z-30">
-                          <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                            要注意
-                          </div>
-                        </div>
-
-                        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1 z-30">
-                          <p className="text-xl font-bold text-white leading-tight drop-shadow-lg">
-                            {typeData[type.worstMatch].name}
-                          </p>
-                          <p className="text-sm text-white/95 line-clamp-2 leading-relaxed drop-shadow-md">
-                            {typeData[type.worstMatch].catchphrase}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div
-                        className="p-4 backdrop-blur-sm"
-                        style={{
-                          backgroundColor: typeData[type.worstMatch].color,
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">⚠️</span>
-                            <span className="text-sm font-semibold text-white">相性に注意</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-white transition-opacity hover:opacity-80">
-                            <span className="text-xs font-medium">詳細</span>
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">⚠️</span>
+                              <span className="text-sm font-semibold text-white">相性に注意</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-white transition-opacity hover:opacity-80">
+                              <span className="text-xs font-medium">詳細</span>
+                              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </Card>
 
@@ -617,7 +622,7 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
             >
               <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-200 p-4 rounded-t-3xl">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">KACHIKAN相性一覧</h2>
+                  <h2 className="text-2xl font-bold">{currentType.name}の相性</h2>
                   <button
                     onClick={() => setCompatibilityModalOpen(false)}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -628,88 +633,131 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
                 </div>
               </div>
 
-              <div className="p-6 space-y-8">
-                {/* Best Compatibility Pairs */}
-                <div className="bg-white rounded-2xl p-6 shadow-lg space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-2xl">❤️</span>
-                    <h3 className="text-xl font-bold">最高の相性（共鳴ペア）</h3>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {bestCompatibilityPairs.map((pair, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center gap-1">
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden shadow-md isolate">
-                            <img
-                              src={typeData[pair.type1].image || "/placeholder.svg"}
-                              alt={`Type ${pair.type1}`}
-                              className="w-full h-full object-cover object-bottom"
-                            />
-                            <div
-                              className="absolute inset-0 z-1"
-                              style={{
-                                backgroundColor: typeData[pair.type1].color,
-                                opacity: 0.75,
-                              }}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center z-2">
-                              <span className="text-white font-black text-xl drop-shadow-lg">{pair.type1}</span>
-                            </div>
-                          </div>
-                          <span className="text-red-500 text-sm">❤️</span>
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden shadow-md isolate">
-                            <img
-                              src={typeData[pair.type2].image || "/placeholder.svg"}
-                              alt={`Type ${pair.type2}`}
-                              className="w-full h-full object-cover object-bottom"
-                            />
-                            <div
-                              className="absolute inset-0 z-1"
-                              style={{
-                                backgroundColor: typeData[pair.type2].color,
-                                opacity: 0.75,
-                              }}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center z-2">
-                              <span className="text-white font-black text-xl drop-shadow-lg">{pair.type2}</span>
-                            </div>
+              <div className="p-6 space-y-6 bg-white rounded-b-3xl">
+                {/* Best Compatibility */}
+                {bestMatchType && (
+                  <div className="space-y-3 bg-gradient-to-br from-pink-50 to-red-50 rounded-xl p-5 border-2 border-pink-200">
+                    <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <span className="text-2xl">❤️</span>
+                      <span>最高の相性（共鳴ペア）</span>
+                    </h4>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex-1 rounded-lg overflow-hidden relative min-h-[80px] isolate">
+                        <img
+                          src={currentType.image || "/placeholder.svg"}
+                          alt={currentType.name}
+                          className="absolute inset-0 w-full h-full object-cover object-bottom z-0"
+                        />
+                        <div
+                          className="absolute inset-0 z-[1]"
+                          style={{
+                            backgroundColor: currentType.color,
+                            opacity: 0.75,
+                          }}
+                        />
+                        <div className="relative z-[2] p-3 flex flex-col items-center justify-center h-full">
+                          <div className="text-white font-black text-3xl drop-shadow-lg">{id}</div>
+                          <div className="text-white text-sm font-bold text-center leading-tight drop-shadow-md">
+                            {currentType.name}
                           </div>
                         </div>
-                        <p className="text-xs text-gray-700 leading-tight">{pair.description}</p>
                       </div>
-                    ))}
+                      <div className="text-pink-500 text-2xl flex-shrink-0">❤️</div>
+                      <div className="flex-1 rounded-lg overflow-hidden relative min-h-[80px] isolate">
+                        <img
+                          src={bestMatchType.image || "/placeholder.svg"}
+                          alt={bestMatchType.name}
+                          className="absolute inset-0 w-full h-full object-cover object-bottom z-0"
+                        />
+                        <div
+                          className="absolute inset-0 z-[1]"
+                          style={{
+                            backgroundColor: bestMatchType.color,
+                            opacity: 0.75,
+                          }}
+                        />
+                        <div className="relative z-[2] p-3 flex flex-col items-center justify-center h-full">
+                          <div className="text-white font-black text-3xl drop-shadow-lg">{currentType.bestMatch}</div>
+                          <div className="text-white text-sm font-bold text-center leading-tight drop-shadow-md">
+                            {bestMatchType.name}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">
+                      価値観が共鳴し、互いを高め合える最高のパートナーシップ。
+                    </p>
                   </div>
-                </div>
+                )}
 
                 {/* Good Compatibility */}
-                <div className="bg-blue-50 rounded-2xl p-6 shadow-lg space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🤝</span>
-                    <h3 className="text-xl font-bold">良い相性（補完ペア）</h3>
+                {goodMatchTypes.length > 0 && (
+                  <div className="space-y-3 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-5 border-2 border-blue-200">
+                    <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <span className="text-2xl">🤝</span>
+                      <span>良い相性（補完ペア）</span>
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {goodMatchTypes.map((type, index) => (
+                        <div
+                          key={index}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
+                          style={{ backgroundColor: type.color, color: "#fff" }}
+                        >
+                          <span className="font-black">{currentType.goodMatch[index]}</span>
+                          <span>{type.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">反対軸を優しく補うタイプ同士。</p>
+                    <p className="text-gray-600 text-sm leading-relaxed">例：挑戦↔慎重、冷静↔創造、理想↔感情 など。</p>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed">反対軸を優しく補うタイプ同士。</p>
-                  <p className="text-sm sm:text-base text-gray-600">例：挑戦↔慎重、冷静↔創造、理想↔感情 など。</p>
-                </div>
+                )}
 
                 {/* Bad Compatibility */}
-                <div className="bg-orange-50 rounded-2xl p-6 shadow-lg space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">⚡</span>
-                    <h3 className="text-xl font-bold">悪い相性（摩擦ペア）</h3>
+                {badMatchTypes.length > 0 && (
+                  <div className="space-y-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-2 border-amber-200">
+                    <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <span className="text-2xl">⚡</span>
+                      <span>悪い相性（摩擦ペア）</span>
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {badMatchTypes.map((type, index) => (
+                        <div
+                          key={index}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
+                          style={{ backgroundColor: type.color, color: "#fff" }}
+                        >
+                          <span className="font-black">{currentType.badMatch[index]}</span>
+                          <span>{type.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">似て非なる価値観で衝突する関係。</p>
+                    <p className="text-gray-600 text-sm leading-relaxed">例：理想系 vs 現実系、自由人 vs 職人。</p>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed">似て非なる価値観で衝突する関係。</p>
-                  <p className="text-sm sm:text-base text-gray-600">例：理想系 vs 現実系、自由人 vs 職人。</p>
-                </div>
+                )}
 
                 {/* Worst Compatibility */}
-                <div className="bg-red-50 rounded-2xl p-6 shadow-lg space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">💀</span>
-                    <h3 className="text-xl font-bold">最悪の相性（反発ペア）</h3>
+                {worstMatchType && (
+                  <div className="space-y-3 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-5 border-2 border-gray-300">
+                    <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <span className="text-2xl">💀</span>
+                      <span>最悪の相性（反発ペア）</span>
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold"
+                        style={{ backgroundColor: worstMatchType.color, color: "#fff" }}
+                      >
+                        <span className="font-black">{currentType.worstMatch}</span>
+                        <span>{worstMatchType.name}</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">軸が真逆、互いを理解しづらい。</p>
+                    <p className="text-gray-600 text-sm leading-relaxed">例：ブレイブルーザー vs フリースピリット。</p>
                   </div>
-                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed">軸が真逆、互いを理解しづらい。</p>
-                  <p className="text-sm sm:text-base text-gray-600">例：ブレイブルーザー vs フリースピリット。</p>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -720,7 +768,7 @@ export default function DetailedResultClient({ typeNumber }: DetailedResultClien
           onOpenChange={setShareModalOpen}
           shareText={shareText}
           characterImage={characterImage}
-          typeName={type.name}
+          typeName={currentType.name}
         />
       </div>
     </>
